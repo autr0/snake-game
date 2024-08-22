@@ -1,10 +1,9 @@
-package com.example.snake_game
+package com.example.snake_game.data
 
-import android.util.Log
 import androidx.compose.runtime.MutableState
+import com.example.snake_game.data.model.State
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -27,17 +26,17 @@ class Game(
         }
 
     suspend fun start(
-        mutableState: MutableStateFlow<State>,
-        state: MutableState<Boolean>,
+        gameState: MutableStateFlow<State>,
+        isSnakeMoving: MutableState<Boolean>,
         dialog: MutableState<Boolean>,
         snakeSize: MutableState<Int>
     ) {
         scope.launch {
 //            var snakeLength = 3
 
-            while (state.value) {
+            while (isSnakeMoving.value) {
                 delay(150)
-                mutableState.update {
+                gameState.update {
 
                     val newPosition = it.snake.first().let { poz ->
                         mutex.withLock {
@@ -55,7 +54,7 @@ class Game(
 
                     if (it.snake.contains(newPosition)) {
 //                        snakeLength = 2
-                        state.value = false
+                        isSnakeMoving.value = false
                         dialog.value = true
 
                     }

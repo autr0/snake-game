@@ -1,25 +1,27 @@
-package com.example.snake_game.data
+package com.example.snake_game.data.database
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 
 @Dao
 interface Dao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPoints(nameEntity: NameEntity)
+    suspend fun insertPoints(pointsEntity: PointsEntity)
 
 //    @Update
 //    suspend fun updatePoints(nameEntity: NameEntity)
 
     @Delete
-    suspend fun deletePoints(nameEntity: NameEntity)
+    suspend fun deletePoints(pointsEntity: PointsEntity)
 
     @Query("SELECT * FROM points_table")
-    fun getAllPoints(): Flow<List<NameEntity>>
+    fun getAllPoints(): Flow<List<PointsEntity>>
+
+    @Query("DELETE FROM points_table")
+    suspend fun deleteAllPoints()
+
 }
