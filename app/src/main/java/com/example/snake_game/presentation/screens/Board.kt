@@ -16,9 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.snake_game.data.Game
 import com.example.snake_game.data.model.State
+import com.example.snake_game.ui.theme.LightThemeSnakeGreen
 
 @Composable
-fun Board(state: State) {
+fun Board(state: State, isDarkTheme: Boolean) {
     BoxWithConstraints(Modifier.padding(16.dp)) {
         val tileSize = maxWidth / Game.BOARD_SIZE
 
@@ -34,7 +35,8 @@ fun Board(state: State) {
                 .offset(x = tileSize * state.food.first, y = tileSize * state.food.second)
                 .size(tileSize)
                 .background(
-                    Color.Green, CircleShape
+                    if (isDarkTheme) Color.Green else LightThemeSnakeGreen,
+                    CircleShape
                 )
         )
 
@@ -54,7 +56,8 @@ fun Board(state: State) {
                         .offset(x = tileSize * it.first, y = tileSize * it.second)
                         .size(tileSize)
                         .background(
-                            Color.Green, ShapeDefaults.Small
+                            if (isDarkTheme) Color.Green else LightThemeSnakeGreen,
+                            ShapeDefaults.Small
                         )
                 )
             }

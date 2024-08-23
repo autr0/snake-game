@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,8 @@ fun GameScreen(
         ScoreDialog(vm, openPreviousScreen)
     }
 
+    val isDarkTheme by vm.isDarkTheme
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(
             modifier = Modifier
@@ -54,7 +57,7 @@ fun GameScreen(
         }
 
         state.value?.let {
-            Board(it)
+            Board(state = it, isDarkTheme = isDarkTheme)
         }
         Buttons {
             vm.onDirectionChange(it)
