@@ -34,19 +34,16 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
 
     private val game = Game(viewModelScope)
 
-    private val _gameState = MutableStateFlow(
-        State(food = Pair(5, 5), snake = listOf(Pair(7, 7)))
-    )
+    private val _gameState = MutableStateFlow(State(food = Pair(5, 5), snake = listOf(Pair(7, 7))))
     val gameState: Flow<State> = _gameState
 
     private val isSnakeMoving = mutableStateOf(false)
 
-    private val _currentSnakeSize = MutableStateFlow(mutableIntStateOf(3))
-    val currentSnakeSize = _currentSnakeSize.asStateFlow()
+    private val _currentSnakeSize = mutableIntStateOf(3)
+    val currentSnakeSize = _currentSnakeSize
 
-    private val _dialogState =
-        MutableStateFlow(mutableStateOf(false)) // make lighter == remove flow
-    val dialogState = _dialogState.asStateFlow()
+    private val _dialogState = mutableStateOf(false)
+    val dialogState = _dialogState
 
     private val _pointsList = MutableStateFlow(listOf<Int>())
     val pointsList = _pointsList.asStateFlow()
@@ -84,15 +81,15 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
     private fun insertPoints() {
         viewModelScope.launch {
             val namePoint = pointsEntity?.copy(
-                points = _currentSnakeSize.value.intValue
+                points = _currentSnakeSize.intValue
             ) ?: PointsEntity(
-                points = _currentSnakeSize.value.intValue
+                points = _currentSnakeSize.intValue
             )
 
             db.dao.insertPoints(namePoint)
 
             pointsEntity = null
-            _currentSnakeSize.value.intValue = 3
+            _currentSnakeSize.intValue = 3
         }
     }
 
@@ -102,35 +99,27 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
         }
     }
 
-
-//    fun deletePoints() {
-//        viewModelScope.launch {
-//            db.dao.deletePoints(nameEntity!!)
-//        }
-//    }
-
     private fun updateNameEntity(minEntity: PointsEntity?) {
         pointsEntity = minEntity
     }
 
     private fun compareScores() {
-        if (pointsEntity != null && _currentSnakeSize.value.intValue > pointsEntity!!.points) {
+        if (pointsEntity != null && _currentSnakeSize.intValue > pointsEntity!!.points) {
             insertPoints()
-//            deletePoints()
         }
     }
 
     fun startGame() {
         _gameState.value = State(food = Pair(5, 5), snake = listOf(Pair(7, 7)))
-        _dialogState.value.value = false
-        _currentSnakeSize.value.intValue = 3
+        _dialogState.value = false
+        _currentSnakeSize.intValue = 3
         isSnakeMoving.value = true
         viewModelScope.launch {
             game.start(
                 gameState = _gameState,
                 isSnakeMoving = isSnakeMoving,
-                dialog = _dialogState.value,
-                snakeSize = _currentSnakeSize.value
+                dialog = _dialogState,
+                snakeSize = _currentSnakeSize
             )
         }
     }
@@ -138,14 +127,14 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
     fun restartGame() {
         _gameState.value = State(food = Pair(5, 5), snake = listOf(Pair(7, 7)))
         closeDialog()
-        _currentSnakeSize.value.intValue = 3
+        _currentSnakeSize.intValue = 3
         isSnakeMoving.value = true
         viewModelScope.launch {
             game.start(
                 gameState = _gameState,
                 isSnakeMoving = isSnakeMoving,
-                dialog = _dialogState.value,
-                snakeSize = _currentSnakeSize.value
+                dialog = _dialogState,
+                snakeSize = _currentSnakeSize
             )
         }
     }
@@ -155,7 +144,7 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
     }
 
     fun closeDialog() {
-        _dialogState.value.value = false
+        _dialogState.value = false
 
         if (pointsEntity == null) {
             insertPoints()

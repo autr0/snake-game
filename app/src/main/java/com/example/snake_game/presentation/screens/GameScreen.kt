@@ -11,7 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,9 +24,11 @@ fun GameScreen(
 ) {
     val state = vm.gameState.collectAsState(initial = null)
 
-    val size by vm.currentSnakeSize.collectAsState()
+    val size = remember { vm.currentSnakeSize }
 
-    val dialogState by vm.dialogState.collectAsState()
+    val dialogState = remember {
+        vm.dialogState
+    }
 
     if (dialogState.value) {
         ScoreDialog(vm, openPreviousScreen)
@@ -44,10 +46,7 @@ fun GameScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "${
-//                    state.value?.snake?.size ?: 0
-                        size.intValue
-                    }",
+                    text = "${size.intValue}",
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.primary
                 )

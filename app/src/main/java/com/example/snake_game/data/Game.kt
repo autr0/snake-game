@@ -32,8 +32,6 @@ class Game(
         snakeSize: MutableState<Int>
     ) {
         scope.launch {
-//            var snakeLength = 3
-
             while (isSnakeMoving.value) {
                 delay(150)
                 gameState.update {
@@ -48,12 +46,10 @@ class Game(
                     }
 
                     if (newPosition == it.food) {
-//                        snakeLength++
                         snakeSize.value++
                     }
 
                     if (it.snake.contains(newPosition)) {
-//                        snakeLength = 2
                         isSnakeMoving.value = false
                         dialog.value = true
 
@@ -64,17 +60,11 @@ class Game(
                             Random().nextInt(BOARD_SIZE),
                             Random().nextInt(BOARD_SIZE)
                         ) else it.food,
-                        snake = listOf(newPosition) + it.snake.take(
-//                            snakeLength
-                            snakeSize.value - 1
-                        )
+                        snake = listOf(newPosition) + it.snake.take(snakeSize.value - 1)
                     )
                 }
-
             }
-
         }
-
     }
 
     companion object {
