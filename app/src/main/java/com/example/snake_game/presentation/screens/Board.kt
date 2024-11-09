@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.snake_game.data.Game
-import com.example.snake_game.data.model.State
+import com.example.snake_game.presentation.State
 import com.example.snake_game.ui.theme.LightThemeSnakeGreen
 
 @Composable

@@ -1,8 +1,8 @@
 package com.example.snake_game.data
 
-import androidx.compose.runtime.MutableState
-import com.example.snake_game.data.model.State
+import com.example.snake_game.presentation.State
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -15,6 +15,7 @@ class Game(
     private val scope: CoroutineScope
 ) {
     private val mutex = Mutex()
+    private var gameJob: Job? = null
 
     var move = Pair(1, 0)
         set(value) {
@@ -25,50 +26,48 @@ class Game(
             }
         }
 
-    suspend fun start(
-        gameState: MutableStateFlow<State>,
-        isSnakeMoving: MutableState<Boolean>,
-        dialog: MutableState<Boolean>,
-        snakeSize: MutableState<Int>
-    ) {
-        scope.launch {
-            while (isSnakeMoving.value) {
+    fun start(gameState: MutableStateFlow<State>) {
+        gameJob = scope.launch {
+            val random = Random()
+
+            while (gameState.value.isSnakeMoving) {
                 delay(150)
-                gameState.update {
 
-                    val newPosition = it.snake.first().let { poz ->
-                        mutex.withLock {
-                            Pair(
-                                (poz.first + move.first + BOARD_SIZE) % BOARD_SIZE,
-                                (poz.second + move.second + BOARD_SIZE) % BOARD_SIZE
-                            )
-                        }
+                val newPosition = gameState.value.snake.first().let { poz ->
+                    mutex.withLock {
+                        Pair(
+                            (poz.first + move.first + BOARD_SIZE) % BOARD_SIZE,
+                            (poz.second + move.second + BOARD_SIZE) % BOARD_SIZE
+                        )
                     }
+                }
 
-                    if (newPosition == it.food) {
-                        snakeSize.value++
-                    }
-
-                    if (it.snake.contains(newPosition)) {
-                        isSnakeMoving.value = false
-                        dialog.value = true
-
-                    }
-
-                    it.copy(
-                        food = if (newPosition == it.food) Pair(
-                            Random().nextInt(BOARD_SIZE),
-                            Random().nextInt(BOARD_SIZE)
-                        ) else it.food,
-                        snake = listOf(newPosition) + it.snake.take(snakeSize.value - 1)
+                gameState.update { state ->
+                    state.copy(
+                        food = if (newPosition == state.food) Pair(
+                            random.nextInt(BOARD_SIZE),
+                            random.nextInt(BOARD_SIZE)
+                        ) else state.food,
+                        snake = listOf(newPosition) + state.snake.take(state.currentSnakeSize - 1),
+                        currentSnakeSize = if (newPosition == state.food) {
+                            state.currentSnakeSize + 1
+                        } else {
+                            state.currentSnakeSize
+                        },
+                        isSnakeMoving = !gameState.value.snake.contains(newPosition),
+                        isShowDialog = gameState.value.snake.contains(newPosition)
                     )
                 }
             }
         }
     }
 
+    fun stopGame() {
+        gameJob?.cancel()
+        gameJob = null
+    }
+
     companion object {
         const val BOARD_SIZE = 16
     }
-
 }

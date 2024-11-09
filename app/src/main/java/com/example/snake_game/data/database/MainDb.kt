@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.snake_game.data.model.PointsEntity
 
 @Database(
     entities = [
@@ -21,8 +22,8 @@ abstract class MainDb : RoomDatabase() {
                 MainDb::class.java,
                 "points.db"
             )
-                .fallbackToDestructiveMigration() // this is allowed in development process only!!! -->
-                                                  // all you previous data will be cleared
+//                .fallbackToDestructiveMigration() // this is allowed in development process only!!! -->
+//                                                  // all you previous data will be cleared
                 .build()
         }
     }

@@ -16,26 +16,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.example.snake_game.presentation.SnakeViewModel
 
 @Composable
 fun ScoreDialog(
-    vm: SnakeViewModel,
-    goHome: () -> Unit
+    score: Int,
+    closeDialog: () -> Unit,
+    handlePoints: () -> Unit,
+    stopGame: () -> Unit,
+    restartGame: () -> Unit
 ) {
-    val score = remember {
-        vm.currentSnakeSize
-    }
-
     Dialog(
         onDismissRequest = {
-            vm.closeDialog()
-            goHome()
+            handlePoints()
+            closeDialog()
+            stopGame()
         }
     ) {
         Card(
@@ -59,7 +57,7 @@ fun ScoreDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${score.intValue}",
+                    text = "$score",
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -80,7 +78,7 @@ fun ScoreDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
-                    onClick = { vm.restartGame() },
+                    onClick = restartGame,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     ),

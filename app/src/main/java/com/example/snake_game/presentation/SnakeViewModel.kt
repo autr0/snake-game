@@ -1,7 +1,5 @@
 package com.example.snake_game.presentation
 
-import android.util.Log
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -12,21 +10,22 @@ import com.example.snake_game.App
 import com.example.snake_game.data.ThemeManager
 import com.example.snake_game.data.Game
 import com.example.snake_game.data.database.MainDb
-import com.example.snake_game.data.database.PointsEntity
-import com.example.snake_game.data.model.State
-import kotlinx.coroutines.flow.Flow
+import com.example.snake_game.data.model.PointsEntity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeManager) : ViewModel() {
+class SnakeViewModel(private val db: MainDb, private val themeManager: ThemeManager) : ViewModel() {
     @Suppress("UNCHECKED_CAST")
     companion object {
         val factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 val database = checkNotNull(extras[APPLICATION_KEY] as App).database
-                val themeManager = ThemeManager(checkNotNull(extras[APPLICATION_KEY] as App).applicationContext)
+                val themeManager =
+                    ThemeManager(checkNotNull(extras[APPLICATION_KEY] as App).applicationContext)
                 return SnakeViewModel(database, themeManager) as T
             }
         }
@@ -34,16 +33,8 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
 
     private val game = Game(viewModelScope)
 
-    private val _gameState = MutableStateFlow(State(food = Pair(5, 5), snake = listOf(Pair(7, 7))))
-    val gameState: Flow<State> = _gameState
-
-    private val isSnakeMoving = mutableStateOf(false)
-
-    private val _currentSnakeSize = mutableIntStateOf(3)
-    val currentSnakeSize = _currentSnakeSize
-
-    private val _dialogState = mutableStateOf(false)
-    val dialogState = _dialogState
+    private val _gameState = MutableStateFlow(State())
+    val gameState: StateFlow<State> = _gameState.asStateFlow()
 
     private val _pointsList = MutableStateFlow(listOf<Int>())
     val pointsList = _pointsList.asStateFlow()
@@ -54,7 +45,7 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
         private set
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
 //          collect pointsData
             db.dao.getAllPoints().collect { pointsEntitiesList ->
                 if (pointsEntitiesList.size > 4) {
@@ -67,7 +58,6 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
                     .map { pointsList.add(it.points) }
 
                 _pointsList.update { pointsList }
-                Log.d("MyLog", "update points list with: ${pointsList.joinToString(" ")}")
             }
         }
     }
@@ -77,25 +67,24 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
         themeManager.isDarkTheme = isDarkTheme.value
     }
 
-
-    private fun insertPoints() {
-        viewModelScope.launch {
+    private fun insertPoints(newPoints: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
             val namePoint = pointsEntity?.copy(
-                points = _currentSnakeSize.intValue
+                points = newPoints
             ) ?: PointsEntity(
-                points = _currentSnakeSize.intValue
+                points = newPoints
             )
-
             db.dao.insertPoints(namePoint)
 
             pointsEntity = null
-            _currentSnakeSize.intValue = 3
+            _gameState.update { state -> state.copy(currentSnakeSize = 3) }
         }
     }
 
     fun clearAllPointsData() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             db.dao.deleteAllPoints()
+            pointsEntity = null
         }
     }
 
@@ -103,58 +92,63 @@ class SnakeViewModel(private val db: MainDb, private  val themeManager: ThemeMan
         pointsEntity = minEntity
     }
 
-    private fun compareScores() {
-        if (pointsEntity != null && _currentSnakeSize.intValue > pointsEntity!!.points) {
-            insertPoints()
+    private fun compareScores(newPoints: Int) {
+        if (pointsEntity != null && _gameState.value.currentSnakeSize > pointsEntity!!.points) {
+            insertPoints(newPoints)
+        }
+    }
+
+    private fun initializeGameState() {
+        _gameState.update { state ->
+            state.copy(
+                food = Pair(5, 5),
+                snake = listOf(Pair(7, 7)),
+                currentSnakeSize = 3,
+                isSnakeMoving = true,
+                isShowDialog = false,
+                navigateBack = false
+            )
         }
     }
 
     fun startGame() {
-        _gameState.value = State(food = Pair(5, 5), snake = listOf(Pair(7, 7)))
-        _dialogState.value = false
-        _currentSnakeSize.intValue = 3
-        isSnakeMoving.value = true
-        viewModelScope.launch {
-            game.start(
-                gameState = _gameState,
-                isSnakeMoving = isSnakeMoving,
-                dialog = _dialogState,
-                snakeSize = _currentSnakeSize
-            )
-        }
+        initializeGameState()
+        game.start(gameState = _gameState)
     }
 
     fun restartGame() {
-        _gameState.value = State(food = Pair(5, 5), snake = listOf(Pair(7, 7)))
-        closeDialog()
-        _currentSnakeSize.intValue = 3
-        isSnakeMoving.value = true
-        viewModelScope.launch {
-            game.start(
-                gameState = _gameState,
-                isSnakeMoving = isSnakeMoving,
-                dialog = _dialogState,
-                snakeSize = _currentSnakeSize
-            )
-        }
-    }
-
-    fun finishMovingState() {
-        isSnakeMoving.value = false
+        handlePoints()
+        stopGame()
+        initializeGameState()
+        game.start(gameState = _gameState)
     }
 
     fun closeDialog() {
-        _dialogState.value = false
-
-        if (pointsEntity == null) {
-            insertPoints()
-        } else compareScores()
+        _gameState.update { state -> state.copy(
+            isShowDialog = false,
+            navigateBack = true
+        ) }
     }
 
-    fun onDirectionChange(
-        it: Pair<Int, Int>
-    ) {
-        game.move = it
+    fun stopGame() {
+        game.stopGame()
+        _gameState.update { state ->
+            state.copy(isSnakeMoving = false)
+        }
+    }
+
+    fun handlePoints() {
+        val newPoints = _gameState.value.currentSnakeSize
+
+        if (pointsEntity == null) {
+            insertPoints(newPoints)
+        } else {
+            compareScores(newPoints)
+        }
+    }
+
+    fun onDirectionChange(newValue: Pair<Int, Int>) {
+        game.move = newValue
     }
 
 }

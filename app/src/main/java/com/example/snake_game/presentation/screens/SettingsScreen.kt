@@ -38,13 +38,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.example.snake_game.presentation.SnakeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     goBack: () -> Unit,
-    vm: SnakeViewModel
+    isDarkTheme: Boolean,
+    onThemeChange: () -> Unit,
+    clearAllData: () -> Unit
 ) {
     val dialogState = remember { mutableStateOf(false) }
 
@@ -90,9 +91,10 @@ fun SettingsScreen(
                 text = "Dark theme"
             ) {
                 Switch(
-                    checked = vm.isDarkTheme.value,
+                    checked = isDarkTheme,
                     onCheckedChange = {
-                        vm.switchAppTheme()
+//                        vm.switchAppTheme()
+                        onThemeChange()
                     },
                     modifier = Modifier.size(50.dp),
                     colors = SwitchDefaults.colors(
@@ -129,7 +131,8 @@ fun SettingsScreen(
 
     if (dialogState.value) {
         DeletePointsDialog(deleteState = dialogState) {
-            vm.clearAllPointsData()
+//            vm.clearAllPointsData()
+            clearAllData()
         }
     }
 

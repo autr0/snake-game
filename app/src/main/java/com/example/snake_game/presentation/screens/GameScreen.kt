@@ -10,12 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.snake_game.presentation.SnakeViewModel
 
 @Composable
@@ -23,16 +23,22 @@ fun GameScreen(
     openPreviousScreen: () -> Unit,
     vm: SnakeViewModel
 ) {
-    val state = vm.gameState.collectAsState(initial = null)
+    val state by vm.gameState.collectAsStateWithLifecycle()
 
-    val size = remember { vm.currentSnakeSize }
-
-    val dialogState = remember {
-        vm.dialogState
+    if (state.isShowDialog) {
+        ScoreDialog(
+            score = state.currentSnakeSize,
+            closeDialog = { vm.closeDialog() },
+            handlePoints= { vm.handlePoints() },
+            stopGame = { vm.stopGame() },
+            restartGame = { vm.restartGame() }
+        )
     }
 
-    if (dialogState.value) {
-        ScoreDialog(vm, openPreviousScreen)
+    LaunchedEffect(key1 = state.navigateBack) {
+        if (state.navigateBack) {
+            openPreviousScreen()
+        }
     }
 
     val isDarkTheme by vm.isDarkTheme
@@ -49,26 +55,22 @@ fun GameScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "${size.intValue}",
+                    text = "${state.currentSnakeSize}",
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
         }
 
-        state.value?.let {
-            Board(state = it, isDarkTheme = isDarkTheme)
-        }
+        Board(state = state, isDarkTheme = isDarkTheme)
         Buttons {
             vm.onDirectionChange(it)
         }
     }
 
     BackHandler {
-        if (dialogState.value) {
-            vm.closeDialog()
-        }
-        vm.finishMovingState()
+        vm.handlePoints()
+        vm.stopGame()
         openPreviousScreen()
     }
 

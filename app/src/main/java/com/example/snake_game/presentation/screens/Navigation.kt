@@ -24,7 +24,7 @@ fun Navigation(
 
         composable("game") {
             GameScreen(
-                { navController.popBackStack() },
+                { navController.navigateUp() },
                 vm = vm
             )
         }
@@ -32,7 +32,9 @@ fun Navigation(
         composable("settings") {
             SettingsScreen(
                 goBack = { navController.popBackStack() },
-                vm = vm
+                isDarkTheme = vm.isDarkTheme.value,
+                onThemeChange = { vm.switchAppTheme() },
+                clearAllData = { vm.clearAllPointsData() }
             )
         }
 
